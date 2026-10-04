@@ -1,38 +1,37 @@
-package com.devtalles.medassistant.chat;
+package com.devtalles.medassistant.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-@RestController
-@RequestMapping("/api/v1/chat")
-public class ChatController {
+@Service
+@Slf4j
+public class AssistantServiceImpl implements AssistantService {
 
     private final ChatClient geminiClient;
     private final ChatClient ollamaClient;
 
-    public ChatController(
+    public AssistantServiceImpl(
             @Qualifier("geminiClient") ChatClient geminiClient,
             @Qualifier("ollamaClient") ChatClient ollamaClient) {
         this.geminiClient = geminiClient;
         this.ollamaClient = ollamaClient;
     }
 
-    @PostMapping
-    public String chat(
-            @RequestBody String prompt,
-            @RequestParam(defaultValue = "gemini") String model
-    ){
+    @Override
+    public String chat(String prompt, String model) {
+        log.info("Chat request - modelo: {} ", model);
+
         return resolveClient(model)
                 .prompt(prompt).call().content();
     }
 
-    @PostMapping(value = "/stream", produces = "text/event-stream; charset=UTF-8")
-    public Flux<String> chatStream(
-            @RequestBody String prompt,
-            @RequestParam(defaultValue = "gemini") String model
-    ){
+    @Override
+    public Flux<String> chatStream(String prompt, String model) {
+        log.info("Stream request - modelo: {} ", model);
+
         return resolveClient(model)
                 .prompt(prompt).stream().content();
     }
@@ -40,5 +39,4 @@ public class ChatController {
     private ChatClient resolveClient(String model){
         return "ollama".equalsIgnoreCase(model) ? ollamaClient : geminiClient;
     }
-
 }
