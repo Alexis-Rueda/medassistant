@@ -2,6 +2,7 @@ package com.devtalles.medassistant.controller;
 
 import com.devtalles.medassistant.dto.ChatRequest;
 import com.devtalles.medassistant.service.AssistantService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,11 @@ public class ChatController {
             @RequestBody ChatRequest request
     ){
         return assistantService.chatStream(request.prompt(), request.model());
+    }
+
+    @PostMapping("/explain")
+    public ResponseEntity<String> explainCondition(@Valid @RequestBody ChatRequest request){
+        return ResponseEntity.ok(assistantService.explainCondition(request.prompt(), request.model()));
     }
 
 }

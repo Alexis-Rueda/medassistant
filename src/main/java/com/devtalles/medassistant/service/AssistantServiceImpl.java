@@ -36,6 +36,19 @@ public class AssistantServiceImpl implements AssistantService {
                 .prompt(prompt).stream().content();
     }
 
+    @Override
+    public String explainCondition(String condition, String model) {
+        log.info("Explain request — condición: {}, modelo: {}", condition, model);
+
+        String message = "Explicame qué es {condicion} en términos simples para un paciente.\n" +
+                "Usá lenguaje accesible y evitá jerga médica innecesaria.";
+
+        return resolveClient(model)
+                .prompt(message)
+                .call()
+                .content();
+    }
+
     private ChatClient resolveClient(String model){
         return "ollama".equalsIgnoreCase(model) ? ollamaClient : geminiClient;
     }
