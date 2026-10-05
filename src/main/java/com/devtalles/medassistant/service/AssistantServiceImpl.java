@@ -1,10 +1,16 @@
 package com.devtalles.medassistant.service;
 
+import com.google.api.client.util.Value;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -12,6 +18,16 @@ public class AssistantServiceImpl implements AssistantService {
 
     private final ChatClient geminiClient;
     private final ChatClient ollamaClient;
+
+    @Value("classpath:prompts/explain-condition.st")
+    private Resource explainConditionPrompt;
+
+    private PromptTemplate explainConditionTemplate;
+
+    @PostConstruct
+    void init(){
+        explainConditionTemplate = new PromptTemplate(explainConditionPrompt);
+    }
 
     public AssistantServiceImpl(
             @Qualifier("geminiClient") ChatClient geminiClient,
@@ -40,8 +56,7 @@ public class AssistantServiceImpl implements AssistantService {
     public String explainCondition(String condition, String model) {
         log.info("Explain request — condición: {}, modelo: {}", condition, model);
 
-        String message = "Explicame qué es {condicion} en términos simples para un paciente.\n" +
-                "Usá lenguaje accesible y evitá jerga médica innecesaria.";
+        String message = explainConditionTemplate.render(Map.of("condicion", condition));
 
         return resolveClient(model)
                 .prompt(message)
