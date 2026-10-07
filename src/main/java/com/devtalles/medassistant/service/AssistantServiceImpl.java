@@ -1,6 +1,5 @@
 package com.devtalles.medassistant.service;
 
-import com.google.api.client.util.Value;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -9,13 +8,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Map;
 
 @Service
 @Slf4j
 public class AssistantServiceImpl implements AssistantService {
-
     private final ChatClient geminiClient;
     private final ChatClient ollamaClient;
 
@@ -25,19 +24,33 @@ public class AssistantServiceImpl implements AssistantService {
     @Value("classpath:prompts/symptom-analysis.st")
     private Resource symptomAnalysisPrompt;
 
+    @Value("classpath:prompts/diagnosis-cot.st")
+    private Resource diagnosisCotResource;
+
+    @Value("classpath:prompts/consultation.st")
+    private Resource consultationResource;
+
     private PromptTemplate explainConditionTemplate;
 
     private PromptTemplate symptomAnalysisTemplate;
 
+    private PromptTemplate diagnosisCotTemplate;
+
+    private PromptTemplate consultationTemplate;
+
     @PostConstruct
     void init(){
-        explainConditionTemplate = new PromptTemplate(explainConditionPrompt);
+        consultationTemplate = new PromptTemplate(consultationResource);
+        diagnosisCotTemplate = new PromptTemplate(diagnosisCotResource);
         symptomAnalysisTemplate = new PromptTemplate(symptomAnalysisPrompt);
+        explainConditionTemplate = new PromptTemplate(explainConditionPrompt);
     }
 
     public AssistantServiceImpl(
             @Qualifier("geminiClient") ChatClient geminiClient,
-            @Qualifier("ollamaClient") ChatClient ollamaClient) {
+            @Qualifier("ollamaClient") ChatClient ollamaClient
+
+    ) {
         this.geminiClient = geminiClient;
         this.ollamaClient = ollamaClient;
     }
@@ -76,6 +89,28 @@ public class AssistantServiceImpl implements AssistantService {
 
         String message = symptomAnalysisTemplate.render(Map.of("sintomas", symptoms));
 
+        return resolveClient(model)
+                .prompt(message)
+                .call()
+                .content();
+    }
+
+    @Override
+    public String diagnoseWithReasoning(String symptoms, String model) {
+        log.info("Diagnóstico CoT — modelo: {}", model);
+
+        String message = diagnosisCotTemplate.render(Map.of("sintomas", symptoms));
+
+        return resolveClient(model)
+                .prompt(message)
+                .call()
+                .content();
+    }
+
+    @Override
+    public String consult(String query, String model) {
+        log.info("Consulta médica — modelo: {}", model);
+        String message = consultationTemplate.render(Map.of("consulta", query));
         return resolveClient(model)
                 .prompt(message)
                 .call()

@@ -39,4 +39,19 @@ public class ChatController {
         return ResponseEntity.ok(assistantService.analyzeSymptoms(request.prompt(), request.model()));
     }
 
+    @PostMapping("/diagnose")
+    public ResponseEntity<String> diagnoseWithReasoning(
+            @Valid @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(
+                assistantService.diagnoseWithReasoning(
+                        request.prompt(), request.model()));
+    }
+
+    @PostMapping("/consult")
+    public ResponseEntity<String> consult(
+            @Valid @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(
+                assistantService.consult(
+                        request.prompt(), request.model()));
+    }
 }
