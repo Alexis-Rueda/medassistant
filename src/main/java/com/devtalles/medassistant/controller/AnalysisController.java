@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 
 @RestController
 @RequestMapping("/api/v1/analysis")
@@ -22,6 +24,11 @@ public class AnalysisController {
     @PostMapping("/condition")
     public ResponseEntity<ConditionSummary> analyzeCondition(@Valid @RequestBody ChatRequest request){
         return ResponseEntity.ok(analysisService.summarizeCondition(request.prompt(), request.model()));
+    }
+
+    @PostMapping("/conditions")
+    public ResponseEntity<List<ConditionSummary>> listConditions(@Valid @RequestBody ChatRequest request){
+        return ResponseEntity.ok(analysisService.listRelatedConditions(request.prompt(), request.model()));
     }
 
 }
