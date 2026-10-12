@@ -2,12 +2,14 @@ package com.devtalles.medassistant.service;
 
 import com.devtalles.medassistant.config.ClientResolver;
 import com.devtalles.medassistant.dto.analysis.ConditionSummary;
+import com.devtalles.medassistant.dto.analysis.SymptomAnalysis;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Slf4j
@@ -57,6 +59,17 @@ public class AnalysisServiceImpl implements AnalysisService{
                 .call()
                 .entity(new ParameterizedTypeReference<>() {
                 });
+    }
+
+    @Override
+    public SymptomAnalysis analyzeSymptoms(String symptoms, String model) {
+        log.info("Análisis estructurado de síntomas — modelo: {}", model);
+
+        return clientResolver.resolve(model)
+                .prompt()
+                .user("Analizá los siguientes síntomas y proporcioná un análisis estructurado: " + symptoms)
+                .call()
+                .entity(SymptomAnalysis.class);
     }
 
 }
