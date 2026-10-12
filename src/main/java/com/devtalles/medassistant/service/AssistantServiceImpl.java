@@ -1,10 +1,10 @@
 package com.devtalles.medassistant.service;
 
+import com.devtalles.medassistant.config.ClientResolver;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -14,9 +14,9 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AssistantServiceImpl implements AssistantService {
-    private final ChatClient geminiClient;
-    private final ChatClient ollamaClient;
+    private final ClientResolver clientResolver;
 
     @Value("classpath:prompts/explain-condition.st")
     private Resource explainConditionPrompt;
@@ -46,20 +46,11 @@ public class AssistantServiceImpl implements AssistantService {
         explainConditionTemplate = new PromptTemplate(explainConditionPrompt);
     }
 
-    public AssistantServiceImpl(
-            @Qualifier("geminiClient") ChatClient geminiClient,
-            @Qualifier("ollamaClient") ChatClient ollamaClient
-
-    ) {
-        this.geminiClient = geminiClient;
-        this.ollamaClient = ollamaClient;
-    }
-
     @Override
     public String chat(String prompt, String model) {
         log.info("Chat request - modelo: {} ", model);
 
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(prompt).call().content();
     }
 
@@ -67,7 +58,7 @@ public class AssistantServiceImpl implements AssistantService {
     public Flux<String> chatStream(String prompt, String model) {
         log.info("Stream request - modelo: {} ", model);
 
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(prompt).stream().content();
     }
 
@@ -77,7 +68,7 @@ public class AssistantServiceImpl implements AssistantService {
 
         String message = explainConditionTemplate.render(Map.of("condicion", condition));
 
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(message)
                 .call()
                 .content();
@@ -89,7 +80,7 @@ public class AssistantServiceImpl implements AssistantService {
 
         String message = symptomAnalysisTemplate.render(Map.of("sintomas", symptoms));
 
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(message)
                 .call()
                 .content();
@@ -101,7 +92,7 @@ public class AssistantServiceImpl implements AssistantService {
 
         String message = diagnosisCotTemplate.render(Map.of("sintomas", symptoms));
 
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(message)
                 .call()
                 .content();
@@ -111,13 +102,10 @@ public class AssistantServiceImpl implements AssistantService {
     public String consult(String query, String model) {
         log.info("Consulta médica — modelo: {}", model);
         String message = consultationTemplate.render(Map.of("consulta", query));
-        return resolveClient(model)
+        return clientResolver.resolve(model)
                 .prompt(message)
                 .call()
                 .content();
     }
 
-    private ChatClient resolveClient(String model){
-        return "ollama".equalsIgnoreCase(model) ? ollamaClient : geminiClient;
-    }
 }
