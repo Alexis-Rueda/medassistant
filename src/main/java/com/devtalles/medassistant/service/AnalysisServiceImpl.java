@@ -21,27 +21,36 @@ public class AnalysisServiceImpl implements AnalysisService{
         this.geminiClient = geminiClient;
         this.ollamaClient = ollamaClient;
     }
+
     @Override
     public ConditionSummary summarizeCondition(String condition, String model) {
 
-        var converter = new BeanOutputConverter<>(ConditionSummary.class);
+        log.info("Análisis estructurado de condición: {}, modelo: {}", condition, model);
 
-        String format = converter.getFormat();
-        log.info("Instrucciones de formato generadas:\n{}", format);
-
-        String prompt = """
-                Proporcioná un resumen médico educativo sobre: %s
-
-                %s
-                """.formatted(condition, format);
-
-        String jsonResponse = resolveClient(model)
-                .prompt(prompt)
+        return resolveClient(model)
+                .prompt()
+                .user("Proporcioná un resumen médico educativo sobre: " + condition)
                 .call()
-                .content();
-        log.info("Respuesta JSON del modelo:\n{}", jsonResponse);
+                .entity(ConditionSummary.class);
 
-        return converter.convert(jsonResponse);
+//        var converter = new BeanOutputConverter<>(ConditionSummary.class);
+//
+//        String format = converter.getFormat();
+//        log.info("Instrucciones de formato generadas:\n{}", format);
+//
+//        String prompt = """
+//                Proporcioná un resumen médico educativo sobre: %s
+//
+//                %s
+//                """.formatted(condition, format);
+//
+//        String jsonResponse = resolveClient(model)
+//                .prompt(prompt)
+//                .call()
+//                .content();
+//        log.info("Respuesta JSON del modelo:\n{}", jsonResponse);
+//
+//        return converter.convert(jsonResponse);
     }
 
 
