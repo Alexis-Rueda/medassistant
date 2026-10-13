@@ -2,6 +2,7 @@ package com.devtalles.medassistant.controller;
 
 import com.devtalles.medassistant.dto.ChatRequest;
 import com.devtalles.medassistant.dto.analysis.ConditionSummary;
+import com.devtalles.medassistant.dto.analysis.QueryClassification;
 import com.devtalles.medassistant.dto.analysis.SymptomAnalysis;
 import com.devtalles.medassistant.service.AnalysisService;
 import jakarta.validation.Valid;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/api/v1/analysis")
@@ -37,6 +37,14 @@ public class AnalysisController {
             @Valid @RequestBody ChatRequest request) {
         return ResponseEntity.ok(
                 analysisService.analyzeSymptoms(
+                        request.prompt(), request.model()));
+    }
+
+    @PostMapping("/classify")
+    public ResponseEntity<QueryClassification> classifyQuery(
+            @Valid @RequestBody ChatRequest request) {
+        return ResponseEntity.ok(
+                analysisService.classifyQuery(
                         request.prompt(), request.model()));
     }
 
