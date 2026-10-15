@@ -1,6 +1,7 @@
 package com.devtalles.medassistant.service;
 
 import com.devtalles.medassistant.config.ClientResolver;
+import com.devtalles.medassistant.tools.AppointmentSearchTool;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AssistantServiceImpl implements AssistantService {
     private final ClientResolver clientResolver;
+    private final AppointmentSearchTool appointmentSearchTool;
 
     @Value("classpath:prompts/explain-condition.st")
     private Resource explainConditionPrompt;
@@ -51,7 +53,10 @@ public class AssistantServiceImpl implements AssistantService {
         log.info("Chat request - modelo: {} ", model);
 
         return clientResolver.resolve(model)
-                .prompt(prompt).call().content();
+                .prompt(prompt)
+                .tools(appointmentSearchTool)
+                .call()
+                .content();
     }
 
     @Override
