@@ -15,7 +15,8 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class AssistantServiceImpl implements AssistantService {
+public class AssistantServiceImpl implements AssistantService{
+
     private final ClientResolver clientResolver;
 
     @Value("classpath:prompts/explain-condition.st")
@@ -47,22 +48,25 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     @Override
-    public String chat(String prompt, String model, Long userId) {
+    public String chat(String prompt, String model, Long userId, String role) {
         log.info("Chat request - modelo: {} ", model);
 
         return clientResolver.resolve(model)
                 .prompt(prompt)
-                .toolContext(Map.of("userId", userId))
+                .toolContext(Map.of("userId", userId, "role", role))
                 .call()
                 .content();
     }
 
     @Override
-    public Flux<String> chatStream(String prompt, String model) {
-        log.info("Stream request - modelo: {} ", model);
+    public Flux<String> chatStream(String prompt, String model, Long userId, String role) {
+        log.info("Stream request - modelo: {}, userId: {}", model, userId);
 
         return clientResolver.resolve(model)
-                .prompt(prompt).stream().content();
+                .prompt(prompt)
+                .toolContext(Map.of("userId", userId, "role", role))
+                .stream()
+                .content();
     }
 
     @Override

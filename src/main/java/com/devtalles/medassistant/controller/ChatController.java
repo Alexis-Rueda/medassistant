@@ -2,9 +2,11 @@ package com.devtalles.medassistant.controller;
 
 import com.devtalles.medassistant.dto.ChatRequest;
 import com.devtalles.medassistant.service.AssistantService;
+import com.devtalles.medassistant.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -16,21 +18,28 @@ import reactor.core.publisher.Flux;
 public class ChatController {
 
     private final AssistantService assistantService;
+    private final SecurityUtils securityUtils;
 
     @PostMapping
     public ResponseEntity<String> chat(
             @RequestBody ChatRequest request,
-            @AuthenticationPrincipal Jwt jwt
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
     ){
         Long userId = jwt.getClaim("userId");
-        return ResponseEntity.ok(assistantService.chat(request.prompt(), request.model(), userId));
+        String role = securityUtils.extractRole(authentication);
+        return ResponseEntity.ok(assistantService.chat(request.prompt(), request.model(), userId, role));
     }
 
     @PostMapping(value = "/stream", produces = "text/event-stream; charset=UTF-8")
     public Flux<String> chatStream(
-            @RequestBody ChatRequest request
+            @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt,
+            Authentication authentication
     ){
-        return assistantService.chatStream(request.prompt(), request.model());
+        Long userId = jwt.getClaim("userId");
+        String role = securityUtils.extractRole(authentication);
+        return assistantService.chatStream(request.prompt(), request.model(), userId, role);
     }
 
     @PostMapping("/explain")
