@@ -1,4 +1,7 @@
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration
   application:
     name: medassistant
   datasource:
@@ -19,3 +22,9 @@ spring:
         repository:
           jdbc:
             initialize-schema: always
+    vectorstore:
+      chroma:
+        url: http://localhost:8000
+#        Usar lo siguiene cuando solo es un vectorstore
+#        collection-name: medassistant
+#        initialize-schema: true
