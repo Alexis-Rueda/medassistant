@@ -51,43 +51,44 @@ public class AssistantConfig {
                 .defaultSystem(systemPrompt)
                 .defaultTools(appointmentSearchTool, doctorInfoTool,
                         patientInfoTool, drugInfoTool, appointmentBookingTool)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        QuestionAnswerAdvisor.builder(vectorStore)
-                                .searchRequest(SearchRequest.builder()
-                                        .similarityThreshold(0.7).topK(3).build())
-                                .promptTemplate(new PromptTemplate("""
+                .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
+                        .searchRequest(SearchRequest.builder()
+                                .similarityThreshold(0.7).topK(3).build())
+                        .promptTemplate(new PromptTemplate("""
                 Contexto de documentos médicos (usalo si es relevante para la pregunta):
                 {question_answer_context}
                 
                 Si la información no está en los documentos, podés usar tus herramientas
                 o tu conocimiento general para responder.
                 """))
-                                .build(), medicalAuditAdvisor)
+                        .build(), medicalAuditAdvisor)
                 .build();
     }
 
     @Bean("ollamaClient")
     ChatClient ollamaClient(
             OllamaChatModel chatModel,
-            @Qualifier("ollamaVectorStore") VectorStore vectorStore) throws IOException {
+            @Qualifier("ollamaVectorStore") VectorStore vectorStore
+    ) throws IOException {
         String systemPrompt = systemPromptResource.getContentAsString(StandardCharsets.UTF_8)
                 .replace("{currentDate}", LocalDate.now().toString());
         return ChatClient.builder(chatModel)
                 .defaultSystem(systemPrompt)
                 .defaultTools(appointmentSearchTool, doctorInfoTool,
                         patientInfoTool, drugInfoTool, appointmentBookingTool)
-                .defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build(),
-                        QuestionAnswerAdvisor.builder(vectorStore)
-                                .searchRequest(SearchRequest.builder()
-                                        .similarityThreshold(0.7).topK(3).build())
-                                .promptTemplate(new PromptTemplate("""
+                .defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore)
+                        .searchRequest(SearchRequest.builder()
+                                .similarityThreshold(0.7)
+                                .topK(3)
+                                .build())
+                        .promptTemplate(new PromptTemplate("""
                 Contexto de documentos médicos (usalo si es relevante para la pregunta):
                 {question_answer_context}
                 
                 Si la información no está en los documentos, podés usar tus herramientas
                 o tu conocimiento general para responder.
                 """))
-                                .build(), medicalAuditAdvisor)
+                        .build(), medicalAuditAdvisor)
                 .build();
     }
 

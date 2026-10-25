@@ -5,6 +5,8 @@ import com.devtalles.medassistant.service.AssistantService;
 import com.devtalles.medassistant.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -43,28 +45,36 @@ public class ChatController {
     }
 
     @PostMapping("/explain")
-    public ResponseEntity<String> explainCondition(@Valid @RequestBody ChatRequest request){
-        return ResponseEntity.ok(assistantService.explainCondition(request.prompt(), request.model()));
+    public ResponseEntity<String> explainCondition(
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt){
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(assistantService.explainCondition(request.prompt(), request.model(), userId));
     }
 
     @PostMapping("/symptoms")
-    public ResponseEntity<String> analyzeSymptoms(@Valid @RequestBody ChatRequest request){
-        return ResponseEntity.ok(assistantService.analyzeSymptoms(request.prompt(), request.model()));
+    public ResponseEntity<String> analyzeSymptoms(
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt){
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(assistantService.analyzeSymptoms(request.prompt(), request.model(), userId));
     }
 
     @PostMapping("/diagnose")
     public ResponseEntity<String> diagnoseWithReasoning(
-            @Valid @RequestBody ChatRequest request) {
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
         return ResponseEntity.ok(
-                assistantService.diagnoseWithReasoning(
-                        request.prompt(), request.model()));
+                assistantService.diagnoseWithReasoning(request.prompt(), request.model(), userId));
     }
 
     @PostMapping("/consult")
     public ResponseEntity<String> consult(
-            @Valid @RequestBody ChatRequest request) {
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
         return ResponseEntity.ok(
-                assistantService.consult(
-                        request.prompt(), request.model()));
+                assistantService.consult(request.prompt(), request.model(), userId));
     }
 }

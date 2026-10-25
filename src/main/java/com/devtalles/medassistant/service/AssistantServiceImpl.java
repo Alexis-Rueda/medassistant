@@ -4,6 +4,7 @@ import com.devtalles.medassistant.config.ClientResolver;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.core.io.Resource;
@@ -40,8 +41,12 @@ public class AssistantServiceImpl implements AssistantService{
 
     private PromptTemplate consultationTemplate;
 
+    private final ChatMemory chatMemory;
+    private MessageChatMemoryAdvisor memoryAdvisor;
+
     @PostConstruct
     void init(){
+        memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         consultationTemplate = new PromptTemplate(consultationResource);
         diagnosisCotTemplate = new PromptTemplate(diagnosisCotResource);
         symptomAnalysisTemplate = new PromptTemplate(symptomAnalysisPrompt);
@@ -55,7 +60,8 @@ public class AssistantServiceImpl implements AssistantService{
         return clientResolver.resolve(model)
                 .prompt(prompt)
                 .toolContext(Map.of("userId", userId, "role", role))
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
+                .advisors(a -> a.advisors(memoryAdvisor)
+                        .param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .call()
                 .content();
     }
@@ -67,53 +73,58 @@ public class AssistantServiceImpl implements AssistantService{
         return clientResolver.resolve(model)
                 .prompt(prompt)
                 .toolContext(Map.of("userId", userId, "role", role))
-                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
+                .advisors(a -> a.advisors(memoryAdvisor)
+                        .param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .stream()
                 .content();
     }
 
     @Override
-    public String explainCondition(String condition, String model) {
+    public String explainCondition(String condition, String model, Long userId) {
         log.info("Explain request — condición: {}, modelo: {}", condition, model);
 
         String message = explainConditionTemplate.render(Map.of("condicion", condition));
 
         return clientResolver.resolve(model)
                 .prompt(message)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .call()
                 .content();
     }
 
     @Override
-    public String analyzeSymptoms(String symptoms, String model) {
+    public String analyzeSymptoms(String symptoms, String model, Long userId) {
         log.info("Análisis de síntomas: {}, modelo: {}", symptoms, model);
 
         String message = symptomAnalysisTemplate.render(Map.of("sintomas", symptoms));
 
         return clientResolver.resolve(model)
                 .prompt(message)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .call()
                 .content();
     }
 
     @Override
-    public String diagnoseWithReasoning(String symptoms, String model) {
+    public String diagnoseWithReasoning(String symptoms, String model, Long userId) {
         log.info("Diagnóstico CoT — modelo: {}", model);
 
         String message = diagnosisCotTemplate.render(Map.of("sintomas", symptoms));
 
         return clientResolver.resolve(model)
                 .prompt(message)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .call()
                 .content();
     }
 
     @Override
-    public String consult(String query, String model) {
+    public String consult(String query, String model, Long userId) {
         log.info("Consulta médica — modelo: {}", model);
         String message = consultationTemplate.render(Map.of("consulta", query));
         return clientResolver.resolve(model)
                 .prompt(message)
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, String.valueOf(userId)))
                 .call()
                 .content();
     }
