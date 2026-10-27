@@ -7,6 +7,7 @@ import com.devtalles.medassistant.service.AppointmentService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -51,8 +52,10 @@ public class AppointmentChainServiceImpl implements AppointmentChainService{
 
         String prompt = extractionTemplate.render(Map.of("pedido", userRequest));
 
-        AppointmentRequest extracted = clientResolver.resolve(model)
+        AppointmentRequest extracted = ChatClient.create(clientResolver.resolveModel(model))
                 .prompt()
+                .system("Sos un extractor de datos. Extraés exactamente lo que dice el texto, " +
+                        "sin interpretar ni cambiar nada.")
                 .user(prompt)
                 .call()
                 .entity(AppointmentRequest.class);
@@ -80,8 +83,9 @@ public class AppointmentChainServiceImpl implements AppointmentChainService{
 
         log.info("Chain paso 3 — turnos enviados al modelo: {}", available);
 
-        return clientResolver.resolve(model)
+        return ChatClient.create(clientResolver.resolveModel(model))
                 .prompt()
+                .system("Sos un asistente de gestión de turnos médicos. Responde de forma breve y natural.")
                 .user(prompt)
                 .call()
                 .content();
