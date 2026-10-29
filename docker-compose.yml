@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - medassistant-data:/var/lib/postgresql/data
   postgres-keycloak:
@@ -33,7 +33,7 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
     ports:
-      - "8090:8080"
+      - "8099:8080"
     depends_on:
       - postgres-keycloak
 
@@ -41,7 +41,7 @@ services:
     image: chromadb/chroma
     container_name: medassistant-chroma
     ports:
-      - "8000:8000"
+      - "8098:8000"
     environment:
       - IS_PERSISTENT=TRUE
     volumes:

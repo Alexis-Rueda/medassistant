@@ -2,6 +2,7 @@ package com.devtalles.medassistant.controller;
 
 import com.devtalles.medassistant.agent.AppointmentChainService;
 import com.devtalles.medassistant.agent.RoutingWorkflowService;
+import com.devtalles.medassistant.agent.orchestrator.OrchestratorService;
 import com.devtalles.medassistant.dto.ChatRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class AgentController {
 
     private final AppointmentChainService appointmentChainService;
     private final RoutingWorkflowService routingWorkflowService;
+    private final OrchestratorService orchestratorService;
 
     @PostMapping("/chain/appointment")
     public ResponseEntity<String> bookAppointmentChain(
@@ -42,6 +45,22 @@ public class AgentController {
         return ResponseEntity.ok(
                 routingWorkflowService.routeQuery(request.prompt(), request.model(), userId));
     }
+    //orchestrator
+    @PostMapping("/orchestrator")
+    public ResponseEntity<String> orchestrate(
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(
+                orchestratorService.orchestrate(request.prompt(), request.model(), userId));
+    }
 
+    @PostMapping(value = "/orchestrator/progress", produces = "text/event-stream; charset=UTF-8")
+    public Flux<String> orchestrateWithProgress(
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
+        return orchestratorService.orchestrateWithProgress(request.prompt(), request.model(), userId);
+    }
 
 }

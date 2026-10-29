@@ -1,11 +1,13 @@
 spring:
+  server:
+    port: 8090
   autoconfigure:
     exclude:
       - org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration
   application:
     name: medassistant
   datasource:
-    url: jdbc:postgresql://localhost:5432/medassistant
+    url: jdbc:postgresql://localhost:5434/medassistant
     username: postgres
     password: postgres
   jpa:
@@ -15,7 +17,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8090/realms/medassistant
+          issuer-uri: http://localhost:8099/realms/medassistant
   ai:
     chat:
       memory:
@@ -24,7 +26,7 @@ spring:
             initialize-schema: always
     vectorstore:
       chroma:
-        url: http://localhost:8000
+        url: http://localhost:8098
 #        Usar lo siguiene cuando solo es un vectorstore
 #        collection-name: medassistant
 #        initialize-schema: true
