@@ -55,6 +55,20 @@ public class AgentController {
                 orchestratorService.orchestrate(request.prompt(), request.model(), userId));
     }
 
+    @PostMapping("/chain/appointment/confirm")
+    public ResponseEntity<String> confirmBooking(
+            @AuthenticationPrincipal Jwt jwt
+    ){
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(appointmentChainService.confirmBooking(userId));
+    }
+
+    @PostMapping("/chain/appointment/cancel")
+    public ResponseEntity<String> cancelBooking(@AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(appointmentChainService.cancelBooking(userId));
+    }
+
     @PostMapping(value = "/orchestrator/progress", produces = "text/event-stream; charset=UTF-8")
     public Flux<String> orchestrateWithProgress(
             @Valid @RequestBody ChatRequest request,

@@ -3,6 +3,7 @@ package com.devtalles.medassistant.agent;
 import com.devtalles.medassistant.config.ClientResolver;
 import com.devtalles.medassistant.dto.AppointmentInfo;
 import com.devtalles.medassistant.dto.agent.AppointmentRequest;
+import com.devtalles.medassistant.dto.agent.AppointmentSelection;
 import com.devtalles.medassistant.service.AppointmentService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +26,7 @@ public class AppointmentChainServiceImpl implements AppointmentChainService{
 
     private final ClientResolver clientResolver;
     private final AppointmentService appointmentService;
+    private final PendingBookingStore pendingBookingStore;
 
     @Value("classpath:prompts/appointment-extraction.st")
     private Resource extractionResource;
@@ -45,8 +48,61 @@ public class AppointmentChainServiceImpl implements AppointmentChainService{
         AppointmentRequest extracted = interpret(userRequest, model);
         List<AppointmentInfo> available = search(extracted);
 
-        return confirm(userRequest, available, model);
+        return select(userRequest, available, model, userId);
     }
+
+    @Override
+    public String confirmBooking(Long userId) {
+        AppointmentSelection selection = pendingBookingStore.remove(userId);
+
+        if(selection==null){
+            return "No tenés ningún turno pendiente de confirmación.";
+        }
+
+        if(!isStillAvailable(selection)){
+            log.info("Turno ya no disponible para userId={}: {} {} {}",
+                    userId, selection.specialty(), selection.date(), selection.time());
+            return "El turno que seleccionaste ya no está disponible. Podés buscar otro.";
+        }
+
+        return book(selection,userId);
+    }
+
+    private String book(AppointmentSelection selection, Long userId){
+
+        String result = appointmentService.bookAppointment(
+                selection.specialty(),
+                LocalDate.parse(selection.date()),
+                LocalTime.parse(selection.time()),
+                userId
+        );
+
+        log.info("Resultado de la reserva: {}", result);
+        return result;
+    }
+
+    private boolean isStillAvailable(AppointmentSelection selection){
+        List<AppointmentInfo> available = appointmentService.findAvailableAppointments(
+                selection.specialty(), LocalDate.parse(selection.date()));
+
+        return available.stream().anyMatch( a -> a.time().equals(selection.time()));
+    }
+
+
+    @Override
+    public String cancelBooking(Long userId) {
+
+        AppointmentSelection selection = pendingBookingStore.remove(userId);
+
+        if(selection==null){
+            return "No tenés ningún turno pendiente de cancelación.";
+        }
+        log.info("Turno cancelado por userId={}: {} {} {}",
+                userId, selection.specialty(), selection.date(), selection.time());
+
+        return "Turno descartado. Podés buscar otro cuando quieras.";
+    }
+
 
     private AppointmentRequest interpret(String userRequest, String model){
 
@@ -74,25 +130,36 @@ public class AppointmentChainServiceImpl implements AppointmentChainService{
         return available;
     }
 
-    private String confirm(String userRequest, List<AppointmentInfo> available, String model){
 
-        String prompt = confirmationTemplate.render(Map.of(
-                "pedido", userRequest,
-                "turnos", available.isEmpty() ? "No hay turnos disponibles" : available.toString()
-        ));
+    private String select(String userRequest, List<AppointmentInfo> available,
+                          String model, Long userId){
 
-        log.info("Chain paso 3 — turnos enviados al modelo: {}", available);
+        if(available.isEmpty()){
+            return "No se encontraron turnos disponibles para esa especialidad y fecha. Podés probar con otra fecha.";
+        }
 
-        return ChatClient.create(clientResolver.resolveModel(model))
-                .prompt()
-                .system("Sos un asistente de gestión de turnos médicos. Responde de forma breve y natural.")
-                .user(prompt)
-                .call()
-                .content();
+        AppointmentSelection selection = selectAppointment(userRequest,available,model);
+
+        pendingBookingStore.store(userId, selection);
+
+        return selection.message();
 
     }
 
+    private AppointmentSelection selectAppointment(String userRequest, List<AppointmentInfo> available, String model){
+        String prompt = confirmationTemplate.render(Map.of(
+                "pedido", userRequest,
+                "turnos", available.toString()
+        ));
 
+        return ChatClient.create(clientResolver.resolveModel(model))
+                .prompt()
+                .system("Sos un asistente de gestión de turnos médicos. " +
+                        "Seleccioná el mejor turno y completá todos los campos.")
+                .user(prompt)
+                .call()
+                .entity(AppointmentSelection.class);
+    }
 
 
 }
