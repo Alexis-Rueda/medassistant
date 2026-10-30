@@ -1,6 +1,7 @@
 package com.devtalles.medassistant.controller;
 
 import com.devtalles.medassistant.agent.AppointmentChainService;
+import com.devtalles.medassistant.agent.OpenAgentService;
 import com.devtalles.medassistant.agent.RoutingWorkflowService;
 import com.devtalles.medassistant.agent.orchestrator.OrchestratorService;
 import com.devtalles.medassistant.dto.ChatRequest;
@@ -23,6 +24,7 @@ public class AgentController {
     private final AppointmentChainService appointmentChainService;
     private final RoutingWorkflowService routingWorkflowService;
     private final OrchestratorService orchestratorService;
+    private final OpenAgentService openAgentService;
 
     @PostMapping("/chain/appointment")
     public ResponseEntity<String> bookAppointmentChain(
@@ -75,6 +77,15 @@ public class AgentController {
             @AuthenticationPrincipal Jwt jwt) {
         Long userId = jwt.getClaim("userId");
         return orchestratorService.orchestrateWithProgress(request.prompt(), request.model(), userId);
+    }
+
+    @PostMapping("/open")
+    public ResponseEntity<String> openAgent(
+            @Valid @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        Long userId = jwt.getClaim("userId");
+        return ResponseEntity.ok(
+                openAgentService.execute(request.prompt(), request.model(), userId));
     }
 
 }
