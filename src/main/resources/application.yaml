@@ -30,3 +30,19 @@ spring:
 #        Usar lo siguiene cuando solo es un vectorstore
 #        collection-name: medassistant
 #        initialize-schema: true
+    mcp:
+      client:
+        request-timeout: 60s
+        stdio:
+          connections:
+            filesystem:
+              command: C:\Program Files\nodejs\node.exe
+              args:
+                - 'C:\Program Files\nodejs\node_modules\@modelcontextprotocol\server-filesystem\dist\index.js'
+                - 'C:\Users\PC\Desktop\Cursos\spring-boot-apps\medassistant\src\main\resources\prompts'
+            github:
+              command: C:\Program Files\nodejs\node.exe
+              args:
+                - 'C:\Program Files\nodejs\node_modules\@modelcontextprotocol\server-github\dist\index.js'
+              env:
+                GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
