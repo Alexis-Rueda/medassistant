@@ -46,6 +46,12 @@ spring:
                 - 'C:\Program Files\nodejs\node_modules\@modelcontextprotocol\server-github\dist\index.js'
               env:
                 GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN}
+            engram:
+              command: C:\Users\PC\go\bin\engram.exe
+              args:
+                - "mcp"
+              env:
+                USERPROFILE: C:\Users\PC
       server:
         name: medassistant-mcp
         version: 1.0.0
