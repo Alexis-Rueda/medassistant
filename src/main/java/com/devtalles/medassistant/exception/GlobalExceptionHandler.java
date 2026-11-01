@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
 
+import java.nio.file.AccessDeniedException;
 import java.time.format.DateTimeParseException;
 
 @RestControllerAdvice
@@ -29,6 +30,19 @@ public class GlobalExceptionHandler {
         log.warn("Formato de fecha inválido: {}", e.getParsedString());
         return ResponseEntity.badRequest()
                 .body("Formato de fecha inválido. Use el formato yyyy-MM-dd.");
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e){
+        log.warn("Argumento inválido: {}", e.getMessage());
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("Acceso denegado: {}", e.getMessage());
+        return ResponseEntity.status(403)
+                .body("No tenés permisos para realizar esta acción.");
     }
 
 }
