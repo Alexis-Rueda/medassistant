@@ -1,8 +1,9 @@
 package com.devtalles.medassistant.service;
 
+import com.devtalles.medassistant.dto.IngestionResult;
 import org.springframework.core.io.Resource;
 
 public interface DocumentIngestionService {
 
-    String ingestNewDocument(Resource resource);
+    IngestionResult ingestNewDocument(Resource resource);
 }
